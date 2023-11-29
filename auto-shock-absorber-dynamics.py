@@ -202,7 +202,9 @@ def calc_under_damped_system(k: float, m: float, z: float, t: float) -> tuple:
 # PLOTTING --------------------------------------------------------------------
 def plot(x: int, y: float) -> None:
     """plots the graph"""
-    # TODO: implement
+    scale_x = np.arange(0, x, .001)
+    scale_y = np.arange(0, y, .001)
+    plt.plot(scale_x, scale_y, y)
 
 # I/O FUNCTIONS ---------------------------------------------------------------
 def read_file(filename: str) -> None:
