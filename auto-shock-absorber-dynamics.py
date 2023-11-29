@@ -3,11 +3,13 @@ Automobile shock absorber dynamics
 """
 import sys  # for sys.exit() - terminate program
 import pickle  # for reading and writing files
+import math  # for math functions
 import numpy as np
 from matplotlib import pyplot as plt
 
-# GLOBAL DICTIONARY -----------------------------------------------------------
+# GLOBAL VARIABLES -----------------------------------------------------------
 records = {}
+number_of_records = 0
 
 
 def main() -> None:
@@ -20,12 +22,19 @@ def main() -> None:
             k = calc_choices[1]
             m = calc_choices[2]
             z = calc_choices[3]
+            t = calc_choices[4]
             if z == 1:
-                calc_critically_damped_system(b, k, m)
+                x, y = calc_critically_damped_system(k, m, t)
+                add_to_records(b, k, m, z, t, x, y)
+                plot(x, y)
             elif z > 1:
-                calc_over_damped_system(b, k, m, z)
+                x, y = calc_over_damped_system(b, k, m, z, t)
+                add_to_records(b, k, m, z, t, x, y)
+                plot(x, y)
             else:
-                calc_under_damped_system(b, k, m, z)
+                Y = calc_under_damped_system(k, m, z, t)
+                add_to_records(b, k, m, z, t, x, y)
+                plot(x, y)
         elif choice == 2:
             query_menu()
         elif choice == 3:
@@ -74,7 +83,7 @@ def calc_menu() -> tuple:
                 is_b_validated = True
                 b = float(b)
 
-    k = float(input("k (spring): "))
+    k = input("k (spring): ")
     is_k_validated = False
     while not is_k_validated:
         for char in k:
@@ -107,7 +116,18 @@ def calc_menu() -> tuple:
                 is_damping_coefficient_validated = True
                 damping_coefficient = float(damping_coefficient)
 
-    return (b, k, m, damping_coefficient)
+    t = input("t (time in seconds): ")
+    is_t_validated = False
+    while not is_t_validated:
+        for char in t:
+            if char not in allowed:
+                print("Invalid input")
+                t = input("t (time in seconds): ")
+            else:
+                is_t_validated = True
+                t = float(t)
+
+    return (b, k, m, damping_coefficient, t)
 
 
 def query_menu() -> None:
@@ -132,21 +152,55 @@ def dump_file() -> None:
     print("=============")
 
 # CALCULATIONS ----------------------------------------------------------------
-def calc_critically_damped_system(b: float, k: float, m: float) -> None:
-    """calculates the critically damped system"""
-    # TODO: implement
+def calc_critically_damped_system(k: float, m: float, t: float) -> tuple:
+    """calculates the critically damped system
+    y = 1 / Ma**2 * (1 - at - e**(-at))
+    a = w = sqrt(k / m)"""
+    a = math.sqrt(k / m)
+    y = []
+    double_time = 2 * t
+    x = int(double_time / .001) # number of iterations
+    for i in range(x):
+        y.append(1 / (m * a**2) * (1 - a * i - math.e**(-a * i)))
+
+    return (x, y)
 
 
-def calc_over_damped_system(b: float, k: float, m: float, z: float) -> None:
-    """calculates the over damped system"""
-    # TODO: implement
+def calc_over_damped_system(b: float, k: float, m: float, z: float, t: float) -> tuple:
+    """calculates the over damped system
+    y = 1 / Mba (1 + (1 / (a-b)) (be**-at - ae**-bt))
+    a = zw + w * sqrt(z**2 - 1)
+    b = zw - w * sqrt(z**2 - 1)
+    w = sqrt(k / m)"""
+    w = math.sqrt(k / m)
+    a = z * w + w * math.sqrt(z**2 - 1)
+    b = z * w - w * math.sqrt(z**2 - 1)
+    y = []
+    double_time = 2 * t
+    x = int(double_time / .001) # number of iterations
+    for i in range(x):
+        y.append(1 / (m * b * a) * (1 + (1 / (a - b)) * (b * math.e**(-a * i) - a * math.e**(-b * i))))
 
-def calc_under_damped_system(b: float, k: float, m: float, z: float) -> None:
-    """calculates the under damped system"""
-    # TODO: implement
+    return (x, y)
+
+
+def calc_under_damped_system(k: float, m: float, z: float, t: float) -> tuple:
+    """calculates the under damped system
+    y = 1 / K (1 - (1 / (sqrt(1-z**2))) e**(-zwt) sin(w sqrt(1 - z**2) t + phi)))
+    phi = tan**-1 (sqrt(1 - z**2)) / z"""
+    phi = math.atan(math.sqrt(1 - z**2) / z)
+    w = math.sqrt(k / m)
+    y = []
+    double_time = 2 * t
+    x = int(double_time / .001) # number of iterations
+    for i in range(x):
+        y.append(1 / k * (1 - (1 / (math.sqrt(1 - z**2))) * math.e**(-z * w * i) * math.sin(w * math.sqrt(1 - z**2) * i + phi)))
+
+    return (x, y)
+
 
 # PLOTTING --------------------------------------------------------------------
-def plot() -> None:
+def plot(x: int, y: float) -> None:
     """plots the graph"""
     # TODO: implement
 
@@ -165,11 +219,27 @@ def read_file(filename: str) -> None:
     except Exception:
         print("Unexpected error:", sys.exc_info()[0])
         load_file()
-    
+
 
 def write_file() -> None:
     """writes a file"""
-    # TODO: implement
+    global records
+
+    try:
+        with open("records", "wb") as file:
+            pickle.dump(records, file)
+            print("file dumped")
+    except Exception:
+        print("Unexpected error:", sys.exc_info()[0])
+        dump_file()
+
+
+def add_to_records(b: float, k: float, m: float, z: float, t: float, x: int, y: float) -> None:
+    """updates the records"""
+    global records
+    number_of_records += 1
+    records[number_of_records] = (b, k, m, z, t, x, y)
+
 
 # To start the program automatically
 if __name__ == "__main__":
