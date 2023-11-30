@@ -73,3 +73,7 @@ by the user.
   - a. Distinguish how the user wants to search and present all hypotheses
 - 5 - IF the choice is to load, use pickle.load (all pickle files will be used in byte mode and with the same name. The goal is to use the files only in the program made, to save time and space the files will be replaced).
 - 6 - IF the choice is to download, use pickle.dump (all pickle files will be used in byte mode and with the same name. The goal is to use the files only in the program made, to save time and space the files will be replaced).
+
+## Screenshot
+
+![screenshot](images/2.png)
